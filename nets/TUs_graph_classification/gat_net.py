@@ -10,6 +10,7 @@ import dgl
     https://arxiv.org/abs/1710.10903
 """
 from layers.gat_layer import GATLayer
+from layers.gatedtangent_layer import FCNet
 from layers.mlp_readout_layer import MLPReadout
 
 class GATNet(nn.Module):
@@ -33,7 +34,8 @@ class GATNet(nn.Module):
         self.embedding_h = nn.Linear(in_dim, hidden_dim * num_heads)
         self.in_feat_dropout = nn.Dropout(in_feat_dropout)
 
-        self.joining_layer = nn.Linear(hidden_dim * num_heads, hidden_dim * num_heads)
+        #self.joining_layer = nn.Linear(hidden_dim * num_heads, hidden_dim * num_heads)
+        self.joining_layer = FCNet([hidden_dim * num_heads, hidden_dim * num_heads])
         
         self.layers = nn.ModuleList([GATLayer(hidden_dim * num_heads, hidden_dim, num_heads,
                                               dropout, self.graph_norm, self.batch_norm, self.residual) for _ in range(n_layers-1)])

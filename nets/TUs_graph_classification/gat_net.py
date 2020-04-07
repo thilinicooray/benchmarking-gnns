@@ -32,6 +32,8 @@ class GATNet(nn.Module):
         
         self.embedding_h = nn.Linear(in_dim, hidden_dim * num_heads)
         self.in_feat_dropout = nn.Dropout(in_feat_dropout)
+
+        self.joining_layer = nn.Linear(hidden_dim * num_heads, hidden_dim * num_heads)
         
         self.layers = nn.ModuleList([GATLayer(hidden_dim * num_heads, hidden_dim, num_heads,
                                               dropout, self.graph_norm, self.batch_norm, self.residual) for _ in range(n_layers-1)])
@@ -41,8 +43,10 @@ class GATNet(nn.Module):
     def forward(self, g, h, e, snorm_n, snorm_e):
         h = self.embedding_h(h)
         h = self.in_feat_dropout(h)
+        h_init = h
         for conv in self.layers:
             h = conv(g, h, snorm_n)
+            h = self.joining_layer(h_init + h)
         g.ndata['h'] = h
         
         if self.readout == "sum":

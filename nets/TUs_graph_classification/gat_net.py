@@ -28,6 +28,7 @@ class GATNet(nn.Module):
         self.graph_norm = net_params['graph_norm']
         self.batch_norm = net_params['batch_norm']
         self.residual = net_params['residual']
+        self.layer_count = n_layers
         
         self.dropout = dropout
         
@@ -35,7 +36,9 @@ class GATNet(nn.Module):
         self.in_feat_dropout = nn.Dropout(in_feat_dropout)
 
         #self.joining_layer = nn.Linear(hidden_dim * num_heads, hidden_dim * num_heads)
-        self.joining_layer = FCNet([hidden_dim * num_heads, hidden_dim * num_heads])
+        #self.joining_layer = FCNet([hidden_dim * num_heads, hidden_dim * num_heads])
+
+        self.joining_layers = nn.ModuleList([ nn.Linear(hidden_dim * num_heads, hidden_dim * num_heads) for _ in range(n_layers)])
         
         self.layers = nn.ModuleList([GATLayer(hidden_dim * num_heads, hidden_dim, num_heads,
                                               dropout, self.graph_norm, self.batch_norm, self.residual) for _ in range(n_layers-1)])
@@ -46,9 +49,16 @@ class GATNet(nn.Module):
         h = self.embedding_h(h)
         h = self.in_feat_dropout(h)
         h_init = h
-        for conv in self.layers:
+        '''for conv in self.layers:
             h = conv(g, h, snorm_n)
-            h = self.joining_layer(h_init + h)
+            h = self.joining_layer(h_init + h)'''
+
+        for i in range(self.layer_count):
+            conv = self.layers[i]
+            joint = self.joining_layers[i]
+            h = conv(g, h, snorm_n)
+            h = joint(h_init + h)
+
         g.ndata['h'] = h
         
         if self.readout == "sum":

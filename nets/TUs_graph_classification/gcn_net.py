@@ -26,13 +26,10 @@ class GCNNet(nn.Module):
         self.graph_norm = net_params['graph_norm']
         self.batch_norm = net_params['batch_norm']
         self.residual = net_params['residual']
-        self.layer_count = n_layers
         
         self.embedding_h = nn.Linear(in_dim, hidden_dim)
         self.in_feat_dropout = nn.Dropout(in_feat_dropout)
 
-        self.joining_layers = nn.ModuleList([ nn.Linear(hidden_dim, hidden_dim ) for _ in range(n_layers)])
-        
         self.layers = nn.ModuleList([GCNLayer(hidden_dim, hidden_dim, F.relu, dropout,
                                               self.graph_norm, self.batch_norm, self.residual) for _ in range(n_layers-1)])
         self.layers.append(GCNLayer(hidden_dim, out_dim, F.relu, dropout, self.graph_norm, self.batch_norm, self.residual))
@@ -41,16 +38,8 @@ class GCNNet(nn.Module):
     def forward(self, g, h, e, snorm_n, snorm_e):
         h = self.embedding_h(h)
         h = self.in_feat_dropout(h)
-        h_init = h
-        '''for conv in self.layers:
+        for conv in self.layers:
             h = conv(g, h, snorm_n)
-            h = self.joining_layer(h_init + h)'''
-
-        for i in range(self.layer_count):
-            conv = self.layers[i]
-            joint = self.joining_layers[i]
-            h = conv(g, h, snorm_n)
-            h = joint(h_init + h)
         g.ndata['h'] = h
         
         if self.readout == "sum":

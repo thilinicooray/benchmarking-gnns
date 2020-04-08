@@ -26,6 +26,7 @@ class GCNNet(nn.Module):
         self.graph_norm = net_params['graph_norm']
         self.batch_norm = net_params['batch_norm']
         self.residual = net_params['residual']
+        self.layer_count = n_layers
         
         self.embedding_h = nn.Linear(in_dim, hidden_dim)
         self.in_feat_dropout = nn.Dropout(in_feat_dropout)
